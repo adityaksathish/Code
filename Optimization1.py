@@ -5,12 +5,14 @@ Created on Wed Sep 27 11:18:34 2017
 @author: adity
 """
 ###Linear Search
+
 def linearSearch (F,target):
     for x in range(len(F)):
         if (F[x]==target):
             return x
     return False
 
+#Testing Linear Search Function to look for the number 6
 target = 6
 F = range(40)
 
