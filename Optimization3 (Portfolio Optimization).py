@@ -7,7 +7,7 @@ Created on Wed Dec 06 14:30:43 2017
 
 import MySQLdb as mySQL
 
-db = mySQL.connect(user='root', passwd='root',host='localhost',db='nasdaq')
+db = mySQL.connect(user=, passwd=,host=,db=)
 
 cur = db.cursor()
 
