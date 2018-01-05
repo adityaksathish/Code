@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ##########################################################################################
-###Q1 Set Up
+###Set Up
 ##########################################################################################
 ```{r, message = FALSE, warning = FALSE}
 rm(list=ls())
@@ -20,7 +20,7 @@ require(qgraph)
 ```
 
 ##########################################################################################
-### Q2 Matrix Representation
+### Matrix Representation
 ##########################################################################################
 
 Creating a 1000 by 1000 adjacency matrix
@@ -60,7 +60,7 @@ str(ds)
 ```
 
 ##########################################################################################
-### Q3: Euclidean Minimum Spanning Tree
+### Euclidean Minimum Spanning Tree Problem
 ##########################################################################################
 Generating 50 random x and y coordinates and plotting them on a graph
 ```{r}
@@ -119,34 +119,7 @@ plot.mst(ds.mst$tree.arcs)
 ```
 
 ##########################################################################################
-### Q4: Hostile Agents
-##########################################################################################
-
-1. Specify this problem as a graph optimization problem.
-
-The goal of this problem is to find the minimum product spanning tree that exists for a graph created where the nodes of the graph represent agents, edges exists between two nodes if it is possible to pass a message between the two agents the nodes represent, and the edge weight would contain the probability that a message was not intercepted.
-
-
-2. How do you structure your inputs to this problem?
-
-P$_{ij}$ = Probability that a message sent between agent i and agent j is intercepted
-Q$_{ij}$ = 1 - P$_{ij}$ = Probability that a message between agent i and agent j is not intercepted
-
-I would create an adjacency matrix M where the matrix contains $log(Q_{ij})$ values in row i and column j. I convert the Q$_{ij}$ to the log of Q$_{ij}$ so that this problem can be solved using a minimum weight spanning tree algorithm. This is to ensure that we account for the fact that we would be dealing with multiplication of probabilities when trying to find the lowest possible probability (we are taking advantage of the log multiplication rule where log(m*n) = log(m) + log(n)). Finally, since Q$_{ij}$ is the probability that a message is not intercepted, we would want to find the maximum weight spanning tree to maximize the probability that a message sent to everyone in the network is not intercepted. To do this we could input $-log(Q_{ij})$ into our adjacency matrix. 
-
-3. Which algorithm do you use to solve it?
-
-If agents in the non-friendly country can talk to most other agents in the country and the resulting adjacency matrix is dense, then I would use Prims algorithm. If the adjacency matrix is sparse (probably more realistic), then I would use Kruskal's algorithm.
-
-4. What is the computational efficiency of your chosen solution?
-
-Assuming E stands for the number of edges in a graph and V stands for the number of vertices.
-
-If the matrix is dense and we use Prims algorithm, then the computational efficiency is O(E + Vlog(V)).
-If the matrix is sparse and we use Kruskal's algorithm, then the computational efficiency is O(Elog(V)).
-
-##########################################################################################
-### Q5: Project Scheduling
+### Project Scheduling Problem
 ##########################################################################################
 Creating labels and nodes to convert problem to a graph
 ```{r}
@@ -263,26 +236,26 @@ df$EF_dates <- EF + as.Date("2017/11/1")
 df$LF_dates <- LF + as.Date("2017/11/1")
 ```
 
-Answers to Q5 Part 1; The earliest completion date for the project if it commences on Nov 1, 2017.
+The earliest completion date for the project if it commences on Nov 1, 2017.
 ```{r}
 print(paste("The earliest overall project completion time is", EOPC, "days"))
 print(paste("The earliest overall project completion date is", (EOPC + as.Date("2017/11/1"))))
 ```
 
-Answer to Q5 Part 2: The earliest and latest start times for each task which will not alter the completion
+The earliest and latest start times for each task which will not alter the completion
 date.
 ```{r}
 df[,c(1,8,9)]
 ```
 
-Answer to Q5 Part 3:The earliest and latest finish times for each activity that will not alter the completion
+The earliest and latest finish times for each activity that will not alter the completion
 date.
 
 ```{r}
 df[,c(1,10,11)]
 ```
 
-Answer to Q5 Part 4: The list of tasks which must adhere to a rigid schedule so as not to delay the overall
+The list of tasks which must adhere to a rigid schedule so as not to delay the overall
 project, as well as a list of those tasks which have more flexibility.
 ```{r}
 Slack.nodes <- rep(0,sum(Slack == 0))
