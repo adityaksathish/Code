@@ -1,0 +1,302 @@
+---
+title: "Optimization-HW2"
+author: "Aditya Sathish"
+date: "October 23, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##########################################################################################
+###Q1 Set Up
+##########################################################################################
+```{r, message = FALSE, warning = FALSE}
+rm(list=ls())
+require(optrees)
+require(igraph)
+require(qgraph)
+```
+
+##########################################################################################
+### Q2 Matrix Representation
+##########################################################################################
+
+Creating a 1000 by 1000 adjacency matrix
+```{r}
+n <- 1000
+d <- runif(n*n)
+d[d < 0.80] <- NA
+d <- matrix(d,nrow=n,ncol=n) #reshape the vector
+
+diag(d) <- NA # no self-loops
+d[upper.tri(d)] = t(d)[upper.tri(d)]
+```
+
+
+Function that takes in an adjacency matrix and converts it into an adjacency list.
+```{r}
+AdjMatrix2List <- function (d) {
+  ds <- matrix(nrow = (nrow(d)*ncol(d)),ncol = 3, dimnames = list(NULL, c("head", "tail", "weight")))
+  c <- 1
+  for (i in 1:nrow(d)) {
+    for (j in 1:ncol(d)) {
+      if (!is.na(d[i,j])) {
+        ds[c,] <- c(i, j, d[i,j])
+        c <- c + 1
+      }
+    }
+  }
+  ds <- ds[1:(c/2),]
+  return(ds)
+} 
+```
+
+Checking above function by converting matrix d to an adjacency list ds and looking at its structure
+```{r}
+ds <- AdjMatrix2List(d)
+str(ds)
+```
+
+##########################################################################################
+### Q3: Euclidean Minimum Spanning Tree
+##########################################################################################
+Generating 50 random x and y coordinates and plotting them on a graph
+```{r}
+n <- 50
+x <- round(runif(n)*1000)
+y <- round(runif(n)*1000)
+plot(x,y,pch=16)
+```
+
+Creating an adjacency matrix d that calculates the Euclidean distance between every pair of points whose x coordinate is given in x and y coordinate is given in y
+```{r}
+Points2Matrix <- function (x,y) {
+  DAT <- data.frame(x,y, 1:n)
+  d <- matrix(nrow = length(x),ncol = length(x))
+  for (i in 1:length(x)) {
+    for (j in 1:length(y)) {
+      d[i,j] <- sqrt(((DAT[i,1] - DAT[j,1])^2) + ((DAT[i,2] - DAT[j,2])^2))
+    }
+  }
+  return(d)
+} 
+
+d <- Points2Matrix(x,y)
+```
+The adjacency matrix (d) created above will be a complete graph as there exists an edge between any two points $d_a$ and $d_b$ in d.  
+
+
+Converting Adjacency Matrix d to an Adjacency List ds
+```{r}
+ds <- AdjMatrix2List(d)
+```
+
+Running the Miniumum Spanning Tree algorithm using Kruskal
+
+```{r}
+ds.mst <- msTreeKruskal(1:n,ds)
+```
+
+Plotting line segments that visualize the minimum spanning tree
+
+```{r}
+plot.mst <- function (arcList) { 
+  for (i in 1:nrow(arcList)) {
+    from <- arcList[i,1]
+    to <- arcList[i,2]
+    xfrom <- x[from]
+    xto <- x[to]
+    yfrom <- y[from]
+    yto <- y[to]
+    segments(xfrom, yfrom, xto, yto)
+  }
+}
+
+plot(x,y, pch = 16)
+plot.mst(ds.mst$tree.arcs)
+```
+
+##########################################################################################
+### Q4: Hostile Agents
+##########################################################################################
+
+1. Specify this problem as a graph optimization problem.
+
+The goal of this problem is to find the minimum product spanning tree that exists for a graph created where the nodes of the graph represent agents, edges exists between two nodes if it is possible to pass a message between the two agents the nodes represent, and the edge weight would contain the probability that a message was not intercepted.
+
+
+2. How do you structure your inputs to this problem?
+
+P$_{ij}$ = Probability that a message sent between agent i and agent j is intercepted
+Q$_{ij}$ = 1 - P$_{ij}$ = Probability that a message between agent i and agent j is not intercepted
+
+I would create an adjacency matrix M where the matrix contains $log(Q_{ij})$ values in row i and column j. I convert the Q$_{ij}$ to the log of Q$_{ij}$ so that this problem can be solved using a minimum weight spanning tree algorithm. This is to ensure that we account for the fact that we would be dealing with multiplication of probabilities when trying to find the lowest possible probability (we are taking advantage of the log multiplication rule where log(m*n) = log(m) + log(n)). Finally, since Q$_{ij}$ is the probability that a message is not intercepted, we would want to find the maximum weight spanning tree to maximize the probability that a message sent to everyone in the network is not intercepted. To do this we could input $-log(Q_{ij})$ into our adjacency matrix. 
+
+3. Which algorithm do you use to solve it?
+
+If agents in the non-friendly country can talk to most other agents in the country and the resulting adjacency matrix is dense, then I would use Prims algorithm. If the adjacency matrix is sparse (probably more realistic), then I would use Kruskal's algorithm.
+
+4. What is the computational efficiency of your chosen solution?
+
+Assuming E stands for the number of edges in a graph and V stands for the number of vertices.
+
+If the matrix is dense and we use Prims algorithm, then the computational efficiency is O(E + Vlog(V)).
+If the matrix is sparse and we use Kruskal's algorithm, then the computational efficiency is O(Elog(V)).
+
+##########################################################################################
+### Q5: Project Scheduling
+##########################################################################################
+Creating labels and nodes to convert problem to a graph
+```{r}
+s.labels <- c('a','b','c','d','e','f','g','h','i','j')
+s.nodes <- c('90','15','5','20','21','25','14','28','30','45')
+```
+
+Manually creating an adjacency list with negative edge weights to convert problem to minimal spanning tree
+```{r}
+v1 <- c(1,2,-90)
+v2 <- c(1,6,-90)
+v3 <- c(1,9,-90)
+v4 <- c(2,3,-15)
+v5 <- c(3,7,-5)
+v6 <- c(4,10,-20)
+v7 <- c(4,5,-20)
+v8 <- c(4,8,-20)
+v9 <- c(6,7,-25)
+v10 <-c(7,4,-14)
+v11 <-c(9,10,-30)
+
+vertices <- rbind(c(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11))
+grph <- matrix(vertices, nrow= 11, ncol = 3,byrow = TRUE, dimnames = list(NULL, c("Origin", "Destination", "weight")))
+```
+
+Running Belmon-Fords (since edge weights are negative) to calculate shortest possible path
+```{r}
+bford <- getShortestPathTree(1:length(s.labels),grph,algorithm = "Bellman-Ford", directed = TRUE)
+```
+
+Save values of Earliest Start times in a vector called ES. ES takes the negative of bford$distances to convert the numbers back to positive values
+```{r}
+ES <- -bford$distances
+```
+
+Calculating the Earliest Overall Project Completion Time (EOPC)
+```{r}
+EOPC <- max(ES)+as.numeric(s.nodes[10])
+```
+
+
+Calculating the Earliest Finish Time (EF)
+```{r}
+EF <- rep(0,length(ES))
+
+for (i in 1:length(ES)){
+  EF[i] <- ES[i] + as.numeric(s.nodes[i])
+}
+
+```
+
+
+Creating vertices for transpose of matrix
+```{r}
+x1 <- c(2,1,-15)
+x2 <- c(3,2,-5)
+x3 <- c(4,7,-20)
+x4 <- c(5,4,-21)
+x5 <- c(6,1,-25)
+x6 <- c(7,3,-14)
+x7<- c(7,6,-14)
+x8<- c(8,4,-28)
+x9<- c(9,1,-30)
+x10<- c(10,9,-45)
+x11<- c(10,4,-45)
+x12<- c(11,5,0)
+x13<- c(11,8,0)
+x14<- c(11,10,0)
+vertices2 <- rbind(c(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14))
+grph2 <- matrix(vertices2, nrow= 14, ncol = 3,byrow = TRUE, dimnames = list(NULL, c("Origin", "Destination", "weight")))
+```
+
+Running Belmon-Fords to calculate shortest possible path
+```{r}
+bford2 <- getShortestPathTree(1:(length(s.labels)+1),grph2,algorithm = "Bellman-Ford", source.node = 11, directed = TRUE)
+```
+
+Calculating Latest Finish Times (LF)
+```{r}
+LF <- bford2$distances + EOPC
+LF <- LF[1:10]
+```
+
+
+Calculating Latest Start Time (LS)
+```{r}
+LS <- rep(0,length(LF))
+
+for (i in 1:length(LF)){
+  LS[i] <- LF[i] - as.numeric(s.nodes[i])
+}
+```
+
+
+Calculate Slack
+```{r}
+Slack <- rep(0,length(LF))
+
+for (i in 1:length(LF)){
+  Slack[i] <- LF[i] - EF[i]
+}
+```
+
+Creating a data frame with task names (s.labels), Task Completion Time (s.nodes), Earliest Start Time (ES), Earliest Finish Times (EF), Latest Start Times (LS), Latest Finish Times (LF), and Slack (Slack)
+```{r}
+df <- data.frame(s.labels, s.nodes, ES, EF, LS, LF, Slack )
+```
+
+Converting ES, EF, LS, and LF to dates relative to Nov 1 2017
+```{r}
+df$ES_dates <- ES + as.Date("2017/11/1")
+df$LS_dates <- LS + as.Date("2017/11/1")
+df$EF_dates <- EF + as.Date("2017/11/1")
+df$LF_dates <- LF + as.Date("2017/11/1")
+```
+
+Answers to Q5 Part 1; The earliest completion date for the project if it commences on Nov 1, 2017.
+```{r}
+print(paste("The earliest overall project completion time is", EOPC, "days"))
+print(paste("The earliest overall project completion date is", (EOPC + as.Date("2017/11/1"))))
+```
+
+Answer to Q5 Part 2: The earliest and latest start times for each task which will not alter the completion
+date.
+```{r}
+df[,c(1,8,9)]
+```
+
+Answer to Q5 Part 3:The earliest and latest finish times for each activity that will not alter the completion
+date.
+
+```{r}
+df[,c(1,10,11)]
+```
+
+Answer to Q5 Part 4: The list of tasks which must adhere to a rigid schedule so as not to delay the overall
+project, as well as a list of those tasks which have more flexibility.
+```{r}
+Slack.nodes <- rep(0,sum(Slack == 0))
+
+c <- 1
+for (i in 1:length(Slack)){
+  if (Slack[i] == 0) {
+    Slack.nodes[c] <- s.labels[i]
+    c <- c+1
+  }
+}
+
+print(Slack.nodes)
+```
+
+
+
