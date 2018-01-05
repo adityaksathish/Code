@@ -2,7 +2,7 @@
 """
 Created on Wed Sep 27 11:18:34 2017
 
-@author: adity
+@author: aditya
 """
 ###Linear Search
 
@@ -61,7 +61,7 @@ print "Example 3: Binary Search"
 print "Looking for [{}] in array {}".format(target,F)
 print binarySearch (F,target)
 
-###Code for Q5 Finding a Square Root
+###Finding the kth root of N
 def bisection_search_kth_root(N,k):
     epsilon = 0.001
     low = 0.000
